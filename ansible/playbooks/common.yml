@@ -1,0 +1,56 @@
+---
+- name: Configure common Kubernetes prerequisites
+  hosts: k8s_cluster
+  become: yes
+
+  tasks:
+
+    - name: Disable swap immediately
+      command: swapoff -a
+      changed_when: false
+
+    - name: Disable swap permanently in /etc/fstab
+      replace:
+        path: /etc/fstab
+        regexp: '^([^#].*\s+swap\s+.*)$'
+        replace: '# \1'
+
+    - name: Load overlay kernel module
+      community.general.modprobe:
+        name: overlay
+        state: present
+
+    - name: Load br_netfilter kernel module
+      modprobe:
+        name: br_netfilter
+        state: present
+
+    - name: Ensure kernel modules load after reboot
+      copy:
+        dest: /etc/modules-load.d/k8s.conf
+        content: |
+          overlay
+          br_netfilter
+
+    - name: Configure Kubernetes sysctl parameters
+      copy:
+        dest: /etc/sysctl.d/k8s.conf
+        content: |
+          net.bridge.bridge-nf-call-iptables = 1
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.ipv4.ip_forward = 1
+
+    - name: Apply sysctl parameters
+      command: sysctl --system
+      changed_when: false
+
+    - name: Put SELinux in permissive mode immediately
+      command: setenforce 0
+      when: ansible_selinux.status == "enabled"
+      changed_when: false
+
+    - name: Make SELinux permissive after reboot
+      replace:
+        path: /etc/selinux/config
+        regexp: '^SELINUX=enforcing'
+        replace: 'SELINUX=permissive'

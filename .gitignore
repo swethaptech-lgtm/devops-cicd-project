@@ -1,0 +1,31 @@
+# Kubernetes credentials
+.kube/
+admin.conf
+
+# Terraform generated files
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Secrets
+*.pem
+*.key
+*.crt
+*.token
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+
+# IDE/editor
+.vscode/
+.idea/
+
+# Temporary files
+*.swp
+*.tmp

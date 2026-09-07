@@ -1,0 +1,28 @@
+---
+- name: Initialize Kubernetes control plane
+  hosts: k8s_master
+  become: yes
+
+  tasks:
+
+    - name: Initialize Kubernetes cluster
+      command: >
+        kubeadm init
+        --apiserver-advertise-address=192.168.190.132
+        --pod-network-cidr=10.244.0.0/16
+        --cri-socket=unix:///run/containerd/containerd.sock
+      args:
+        creates: /etc/kubernetes/admin.conf
+
+    - name: Create root kubeconfig directory
+      file:
+        path: /root/.kube
+        state: directory
+        mode: '0700'
+
+    - name: Copy Kubernetes admin kubeconfig
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /root/.kube/config
+        remote_src: yes
+        mode: '0600'

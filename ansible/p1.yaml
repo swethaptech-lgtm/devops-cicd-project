@@ -1,0 +1,11 @@
+---
+- name: cronjob setup
+  hosts: all
+  tasks:
+   - name: cronjowb
+     cron:
+      name: "daoqly"
+      hour: "2"
+      minute: "3"
+      job: "/biqn/sh"
+      user: root

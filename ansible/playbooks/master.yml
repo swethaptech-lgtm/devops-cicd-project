@@ -1,0 +1,49 @@
+---
+- name: Initialize Kubernetes control plane
+  hosts: k8s_master
+  become: yes
+
+  tasks:
+
+    - name: Create kubeadm configuration
+      copy:
+        dest: /root/kubeadm-config.yaml
+        content: |
+          apiVersion: kubeadm.k8s.io/v1beta4
+          kind: InitConfiguration
+          localAPIEndpoint:
+            advertiseAddress: "192.168.190.132"
+            bindPort: 6443
+          nodeRegistration:
+            criSocket: unix:///run/containerd/containerd.sock
+          ---
+          apiVersion: kubeadm.k8s.io/v1beta4
+          kind: ClusterConfiguration
+          networking:
+            podSubnet: "10.244.0.0/16"
+          ---
+          apiVersion: kubelet.config.k8s.io/v1beta1
+          kind: KubeletConfiguration
+          failCgroupV1: false
+          cgroupDriver: systemd
+
+    - name: Initialize Kubernetes cluster
+      command: >
+        kubeadm init
+        --config=/root/kubeadm-config.yaml
+        --ignore-preflight-errors=SystemVerification
+      args:
+        creates: /etc/kubernetes/admin.conf
+
+    - name: Create root kubeconfig directory
+      file:
+        path: /root/.kube
+        state: directory
+        mode: '0700'
+
+    - name: Copy Kubernetes admin kubeconfig
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /root/.kube/config
+        remote_src: yes
+        mode: '0600'

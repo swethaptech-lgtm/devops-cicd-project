@@ -1,0 +1,70 @@
+---
+- name: Install and configure containerd
+  hosts: k8s_cluster
+  become: yes
+
+  tasks:
+
+    - name: Install required packages
+      dnf:
+        name:
+          - dnf-utils
+          - device-mapper-persistent-data
+          - lvm2
+        state: present
+
+    - name: Add Docker repository
+      command: >
+        dnf config-manager
+        --add-repo
+        https://download.docker.com/linux/centos/docker-ce.repo
+      args:
+        creates: /etc/yum.repos.d/docker-ce.repo
+
+    - name: Install containerd
+      dnf:
+        name: containerd.io
+        state: present
+
+    - name: Create containerd configuration directory
+      file:
+        path: /etc/containerd
+        state: directory
+        mode: '0755'
+
+    - name: Generate default containerd configuration
+      shell: containerd config default > /etc/containerd/config.toml
+      args:
+        creates: /etc/containerd/config.toml
+
+    - name: Enable containerd CRI plugin
+      replace:
+        path: /etc/containerd/config.toml
+        regexp: 'disabled_plugins\s*=\s*\["cri"\]'
+        replace: 'disabled_plugins = []'
+      notify: Restart containerd 
+
+
+
+
+
+
+    - name: Enable systemd cgroup driver
+      replace:
+        path: /etc/containerd/config.toml
+        regexp: 'SystemdCgroup = false'
+        replace: 'SystemdCgroup = true'
+      notify: Restart containerd
+
+    - name: Enable and start containerd
+      systemd:
+        name: containerd
+        enabled: yes
+        state: started
+
+  handlers:
+
+    - name: Restart containerd
+      systemd:
+        name: containerd
+        state: restarted

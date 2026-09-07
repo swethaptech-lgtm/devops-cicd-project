@@ -1,0 +1,35 @@
+---
+- name: Perform Kubernetes node pre-checks
+  hosts: k8s_cluster
+  gather_facts: yes
+
+  tasks:
+
+    - name: Display hostname
+      debug:
+        msg: "Hostname is {{ ansible_hostname }}"
+
+    - name: Display operating system
+      debug:
+        msg: "OS is {{ ansible_distribution }} {{ ansible_distribution_version }}"
+
+    - name: Display CPU count
+      debug:
+        msg: "CPU count is {{ ansible_processor_vcpus }}"
+
+    - name: Display total memory
+      debug:
+        msg: "Memory is {{ ansible_memtotal_mb }} MB"
+
+    - name: Display default IP address
+      debug:
+        msg: "IP address is {{ ansible_default_ipv4.address }}"
+
+    - name: Check swap
+      command: swapon --show
+      register: swap_status
+      changed_when: false
+
+    - name: Display swap status
+      debug:
+        msg: "{{ swap_status.stdout if swap_status.stdout else 'Swap is disabled' }}"

@@ -1,0 +1,20 @@
+---
+- name: Join Kubernetes worker nodes
+  hosts: k8s_workers
+  become: yes
+
+  tasks:
+
+    - name: Generate Kubernetes join command
+      command: kubeadm token create --print-join-command
+      delegate_to: k8smaster
+      run_once: true
+      register: join_command
+
+    - name: Join worker nodes to Kubernetes cluster
+      command: >
+        {{ join_command.stdout }}
+        --cri-socket=unix:///run/containerd/containerd.sock
+        --ignore-preflight-errors=SystemVerification
+      args:
+        creates: /etc/kubernetes/kubelet.conf
