@@ -57,6 +57,33 @@ pipeline {
         }
     }
 
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                    kubectl set image deployment/devops-demo \
+                      devops-demo=${IMAGE_NAME}:${BUILD_NUMBER} \
+                      -n devops-demo
+                '''
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                sh '''
+                    kubectl rollout status deployment/devops-demo \
+                      -n devops-demo \
+                      --timeout=120s
+                '''
+
+                sh '''
+                    kubectl get pods \
+                      -n devops-demo \
+                      -o wide
+                '''
+            }
+        }
+
+
     post {
         always {
             sh 'docker logout ghcr.io || true'
