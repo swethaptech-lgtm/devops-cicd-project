@@ -1,5 +1,5 @@
 output "monitoring_namespace_name" {
-  description = "Monitoring namespace created by Terraform"
+  description = "Monitoring namespace is created by Terraform"
   value       = kubernetes_namespace.monitoring.metadata[0].name
 }
 
