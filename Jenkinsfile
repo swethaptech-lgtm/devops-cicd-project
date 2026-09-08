@@ -55,7 +55,7 @@ pipeline {
                 sh 'docker push ${IMAGE_NAME}:${BUILD_NUMBER}'
             }
         }
-    }
+    
 
         stage('Deploy to Kubernetes') {
             steps {
@@ -82,6 +82,8 @@ pipeline {
                 '''
             }
         }
+
+     }
 
 
     post {
