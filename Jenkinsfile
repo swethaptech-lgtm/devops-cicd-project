@@ -1,3 +1,5 @@
+
+
 pipeline {
     agent any
 
@@ -43,6 +45,20 @@ pipeline {
             steps {
                 dir('terraform') {
                     sh 'terraform plan'
+                }
+            }
+        }
+
+        stage('Approve Terraform Apply') {
+            steps {
+                input message: 'Apply Terraform infrastructure changes?', ok: 'Apply'
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                dir('terraform') {
+                    sh 'terraform apply -auto-approve'
                 }
             }
         }
