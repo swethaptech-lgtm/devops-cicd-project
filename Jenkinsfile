@@ -1,5 +1,3 @@
-
-
 pipeline {
     agent any
 
@@ -44,21 +42,50 @@ pipeline {
         stage('Terraform Plan') {
             steps {
                 dir('terraform') {
-                    sh 'terraform plan'
+                    script {
+                        def planStatus = sh(
+                            script: 'terraform plan -detailed-exitcode -out=tfplan',
+                            returnStatus: true
+                        )
+
+                        if (planStatus == 0) {
+                            echo 'Terraform: No infrastructure changes detected.'
+                            env.TF_CHANGES = 'false'
+                        } else if (planStatus == 2) {
+                            echo 'Terraform: Infrastructure changes detected.'
+                            env.TF_CHANGES = 'true'
+
+                            sh 'terraform show -no-color tfplan'
+                        } else {
+                            error 'Terraform plan failed.'
+                        }
+                    }
                 }
             }
         }
 
         stage('Approve Terraform Apply') {
+            when {
+                expression {
+                    env.TF_CHANGES == 'true'
+                }
+            }
+
             steps {
                 input message: 'Apply Terraform infrastructure changes?', ok: 'Apply'
             }
         }
 
         stage('Terraform Apply') {
+            when {
+                expression {
+                    env.TF_CHANGES == 'true'
+                }
+            }
+
             steps {
                 dir('terraform') {
-                    sh 'terraform apply -auto-approve'
+                    sh 'terraform apply -auto-approve tfplan'
                 }
             }
         }
@@ -132,3 +159,5 @@ pipeline {
         }
     }
 }
+
+
