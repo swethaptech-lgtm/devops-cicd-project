@@ -1,4 +1,11 @@
 terraform {
+  backend "local" {
+    path = "/var/lib/jenkins/terraform-state/terraform.tfstate"
+  }
+}
+
+
+terraform {
   required_providers {
     kubernetes = {
       source  = "hashicorp/kubernetes"
@@ -8,5 +15,5 @@ terraform {
 }
 
 provider "kubernetes" {
-  config_path = "/root/.kube/config"
+  config_path = pathexpand("~/.kube/config")
 }
