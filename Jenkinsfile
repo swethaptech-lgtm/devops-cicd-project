@@ -20,6 +20,33 @@ pipeline {
             }
         }
 
+        stage('Terraform Init') {
+            steps {
+                dir('terraform') {
+                    sh 'terraform init -reconfigure'
+                }
+            }
+        }
+
+        stage('Terraform Validate') {
+            steps {
+                dir('terraform') {
+                    sh '''
+                        terraform fmt -check
+                        terraform validate
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir('terraform') {
+                    sh 'terraform plan'
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t devops-demo:${BUILD_NUMBER} .'
@@ -55,7 +82,6 @@ pipeline {
                 sh 'docker push ${IMAGE_NAME}:${BUILD_NUMBER}'
             }
         }
-    
 
         stage('Deploy to Kubernetes') {
             steps {
@@ -82,9 +108,7 @@ pipeline {
                 '''
             }
         }
-
-     }
-
+    }
 
     post {
         always {
