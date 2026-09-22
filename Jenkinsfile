@@ -51,11 +51,13 @@ pipeline {
                         if (planStatus == 0) {
                             echo 'Terraform: No infrastructure changes detected.'
                             env.TF_CHANGES = 'false'
+
                         } else if (planStatus == 2) {
                             echo 'Terraform: Infrastructure changes detected.'
                             env.TF_CHANGES = 'true'
 
                             sh 'terraform show -no-color tfplan'
+
                         } else {
                             error 'Terraform plan failed.'
                         }
@@ -72,7 +74,8 @@ pipeline {
             }
 
             steps {
-                input message: 'Apply Terraform infrastructure changes?', ok: 'Apply'
+                input message: 'Apply Terraform infrastructure changes?',
+                      ok: 'Apply'
             }
         }
 
@@ -126,6 +129,40 @@ pipeline {
             }
         }
 
+        stage('Deploy Helm Application') {
+            steps {
+                sh '''
+                    helm upgrade --install devops-demo-helm \
+                      ./helm/devops-demo \
+                      --namespace devops-demo-helm \
+                      --create-namespace \
+                      --set image.tag=${BUILD_NUMBER}
+                '''
+            }
+        }
+
+        stage('Verify Helm Deployment') {
+            steps {
+
+                sh '''
+                    kubectl rollout status deployment/devops-demo \
+                      -n devops-demo-helm \
+                      --timeout=120s
+                '''
+
+                sh '''
+                    kubectl get pods \
+                      -n devops-demo-helm \
+                      -o wide
+                '''
+
+                sh '''
+                    helm status devops-demo-helm \
+                      -n devops-demo-helm
+                '''
+            }
+        }
+
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
@@ -138,6 +175,7 @@ pipeline {
 
         stage('Verify Deployment') {
             steps {
+
                 sh '''
                     kubectl rollout status deployment/devops-demo \
                       -n devops-demo \
@@ -159,5 +197,3 @@ pipeline {
         }
     }
 }
-
-
