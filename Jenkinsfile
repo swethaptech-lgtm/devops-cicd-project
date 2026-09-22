@@ -238,6 +238,43 @@ pipeline {
     }
 
     post {
+        success {
+            emailext(
+                to: 'swethahp12345@gmail.com',
+                subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+Jenkins CI/CD Pipeline Completed Successfully!
+
+Job Name: ${env.JOB_NAME}
+Build Number: ${env.BUILD_NUMBER}
+Status: SUCCESS
+
+Docker Image:
+${env.IMAGE_NAME}:${env.BUILD_NUMBER}
+
+Build Details:
+${env.BUILD_URL}
+"""
+            )
+        }
+
+        failure {
+            emailext(
+                to: 'swethahp12345@gmail.com',
+                subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+Jenkins CI/CD Pipeline Failed!
+
+Job Name: ${env.JOB_NAME}
+Build Number: ${env.BUILD_NUMBER}
+Status: FAILURE
+
+Check the Jenkins console output:
+${env.BUILD_URL}
+"""
+            )
+        }
+
         always {
             sh 'docker logout ghcr.io || true'
         }
