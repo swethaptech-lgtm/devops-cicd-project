@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -110,6 +111,41 @@ pipeline {
             }
         }
 
+        stage('Create Build Artifact') {
+            steps {
+                sh '''
+                    tar -czf devops-demo-${BUILD_NUMBER}.tar.gz \
+                        app Dockerfile
+
+                    ls -lh devops-demo-${BUILD_NUMBER}.tar.gz
+                '''
+            }
+        }
+
+        stage('Upload Artifact to Nexus') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'nexus-credentials',
+                        usernameVariable: 'NEXUS_USER',
+                        passwordVariable: 'NEXUS_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                        set +x
+
+                        curl --fail --show-error --silent \
+                          --retry 3 \
+                          --user "$NEXUS_USER:$NEXUS_PASSWORD" \
+                          --upload-file "devops-demo-${BUILD_NUMBER}.tar.gz" \
+                          "http://localhost:8081/repository/devops-artifacts/builds/${BUILD_NUMBER}/devops-demo-${BUILD_NUMBER}.tar.gz"
+
+                        echo "Artifact uploaded to Nexus successfully."
+                    '''
+                }
+            }
+        }
+
         stage('Tag Docker Image') {
             steps {
                 sh 'docker tag devops-demo:${BUILD_NUMBER} ${IMAGE_NAME}:${BUILD_NUMBER}'
@@ -126,6 +162,7 @@ pipeline {
                 ]) {
                     sh '''
                         set +x
+
                         echo "$GHCR_TOKEN" | docker login ghcr.io \
                           -u swethaptech-lgtm \
                           --password-stdin
