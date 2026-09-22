@@ -50,7 +50,7 @@ pipeline {
                         )
 
                         if (planStatus == 0) {
-                            echo 'Terraform: No infrastructure changes detected.'
+                            echo 'Terraform: No infrastructure changes are  detected.'
                             env.TF_CHANGES = 'false'
 
                         } else if (planStatus == 2) {
