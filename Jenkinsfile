@@ -99,6 +99,17 @@ pipeline {
             }
         }
 
+        stage('Trivy Security Scan') {
+            steps {
+                sh '''
+                    trivy image \
+                      --severity CRITICAL \
+                      --exit-code 1 \
+                      devops-demo:${BUILD_NUMBER}
+                '''
+            }
+        }
+
         stage('Tag Docker Image') {
             steps {
                 sh 'docker tag devops-demo:${BUILD_NUMBER} ${IMAGE_NAME}:${BUILD_NUMBER}'
@@ -143,7 +154,6 @@ pipeline {
 
         stage('Verify Helm Deployment') {
             steps {
-
                 sh '''
                     kubectl rollout status deployment/devops-demo \
                       -n devops-demo-helm \
@@ -175,7 +185,6 @@ pipeline {
 
         stage('Verify Deployment') {
             steps {
-
                 sh '''
                     kubectl rollout status deployment/devops-demo \
                       -n devops-demo \
